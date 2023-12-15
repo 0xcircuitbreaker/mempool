@@ -43,27 +43,31 @@ class XeggexApi implements PriceFeed {
         continue;
       }
   
-      const resolution = type === 'hour' ? '15' : '1440'; // '15' for 15 minutes and '1440' for 1 day
+      const resolution = type === 'hour' ? '15' : '1440';
       const symbol = encodeURIComponent(currency);
       const countBack = 15;
-      const firstDataRequest = 1;
+      const url = `https://api.xeggex.com/api/v2/market/candles?symbol=${symbol}&resolution=${resolution}&countBack=${countBack}&firstDataRequest=1`;
   
-      const url = `https://api.xeggex.com/api/v2/market/candles?symbol=${symbol}&resolution=${resolution}&countBack=${countBack}&firstDataRequest=${firstDataRequest}`;
-      const response = await query(url) as CandleApiResponse;
-
-      if (response && response.bars) {
-        for (const bar of response.bars) {
-          const time = Math.round(bar.time / 1000);
-          if (priceHistory[time] === undefined) {
-            priceHistory[time] = priceUpdater.getEmptyPricesObj();
+      try {
+        const response = await query(url) as CandleApiResponse;
+        console.log('API Response:', response);
+  
+        if (response && response.bars) {
+          for (const bar of response.bars) {
+            const time = Math.round(bar.time / 1000);
+            if (priceHistory[time] === undefined) {
+              priceHistory[time] = priceUpdater.getEmptyPricesObj();
+            }
+            priceHistory[time][currency] = bar.close;
           }
-          priceHistory[time][currency] = bar.close; // Using the 'close' price
         }
+      } catch (error) {
+        console.error('Error fetching recent price:', error);
       }
     }
   
     return priceHistory;
-  }
+  }  
 }
 
 export default XeggexApi;
